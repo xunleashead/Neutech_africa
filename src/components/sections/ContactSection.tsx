@@ -16,39 +16,38 @@ export default function ContactSection() {
     subject: "",
     message: "",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+    const { name, email, subject, message } = formData;
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setSubmitStatus("success");
-        setFormData({ name: "", email: "", subject: "", message: "" });
-      } else {
-        setSubmitStatus("error");
-      }
-
-      setTimeout(() => setSubmitStatus("idle"), 5000);
-    } catch (error) {
-      console.error("Form submission error:", error);
+    // Basic validation
+    if (!name || !email || !subject || !message) {
       setSubmitStatus("error");
       setTimeout(() => setSubmitStatus("idle"), 5000);
-    } finally {
-      setIsSubmitting(false);
+      return;
     }
+
+    setIsSubmitting(true);
+
+    // Construct mailto link
+    const mailtoLink = `mailto:${contactInfo.email}?subject=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(
+      `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
+    )}`;
+
+    // Open the user's email client
+    window.location.href = mailtoLink;
+
+    // Reset form and show success message
+    setFormData({ name: "", email: "", subject: "", message: "" });
+    setSubmitStatus("success");
+    setTimeout(() => setSubmitStatus("idle"), 5000);
+    setIsSubmitting(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -235,13 +234,13 @@ export default function ContactSection() {
 
                   {submitStatus === "success" && (
                     <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
-                      Thank you for your message! We'll get back to you soon.
+                      Email client opened! Please send your message.
                     </div>
                   )}
 
                   {submitStatus === "error" && (
                     <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
-                      Something went wrong. Please try again later.
+                      Please fill all fields before sending.
                     </div>
                   )}
 
@@ -251,7 +250,7 @@ export default function ContactSection() {
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg"
                   >
                     {isSubmitting ? (
-                      "Sending..."
+                      "Opening..."
                     ) : (
                       <span className="flex items-center justify-center space-x-2">
                         <span>Send Message</span>
