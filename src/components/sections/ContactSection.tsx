@@ -19,6 +19,8 @@ export default function ContactSection() {
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const isMobile = () => /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -33,17 +35,25 @@ export default function ContactSection() {
 
     setIsSubmitting(true);
 
-    // Construct mailto link
-    const mailtoLink = `mailto:${contactInfo.email}?subject=${encodeURIComponent(
-      subject
-    )}&body=${encodeURIComponent(
-      `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
-    )}`;
+    if (isMobile()) {
+      // Mobile: use mailto (opens default mail app)
+      const mailtoLink = `mailto:${contactInfo.email}?subject=${encodeURIComponent(
+        subject
+      )}&body=${encodeURIComponent(
+        `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
+      )}`;
+      window.location.href = mailtoLink;
+    } else {
+      // Desktop: open Gmail web with pre-filled fields
+      const gmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+        contactInfo.email
+      )}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(
+        `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`
+      )}`;
+      window.open(gmailLink, "_blank");
+    }
 
-    // Open the user's email client
-    window.location.href = mailtoLink;
-
-    // Reset form and show success message
+    // Reset form & show success message
     setFormData({ name: "", email: "", subject: "", message: "" });
     setSubmitStatus("success");
     setTimeout(() => setSubmitStatus("idle"), 5000);
